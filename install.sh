@@ -217,7 +217,9 @@ install_docker() {
   if ! find_compose; then
     echo "未检测到 Docker Compose，开始自动安装..."
     if ! apt_install docker-compose-plugin; then
-      apt_install docker-compose
+      if ! apt_install docker-compose-v2; then
+        apt_install docker-compose
+      fi
     fi
   fi
 }
@@ -262,6 +264,16 @@ fi
 
 cd "${PROJECT_DIR}"
 
+set_env_value() {
+  local key="$1"
+  local value="$2"
+  if grep -q "^${key}=" .env; then
+    sed -i "s|^${key}=.*|${key}=${value}|" .env
+  else
+    printf '%s=%s\n' "${key}" "${value}" >> .env
+  fi
+}
+
 echo "[3/5] 自动创建安全配置..."
 if [[ ! -f .env ]]; then
   cp .env.example .env
@@ -270,13 +282,13 @@ fi
 APP_PASSWORD_VALUE="$(grep '^APP_PASSWORD=' .env | tail -n 1 | cut -d= -f2- || true)"
 if [[ -z "${APP_PASSWORD_VALUE}" || "${APP_PASSWORD_VALUE}" == "please-change-this-password" ]]; then
   GENERATED_PASSWORD="$(openssl rand -hex 16)"
-  sed -i "s|^APP_PASSWORD=.*|APP_PASSWORD=${GENERATED_PASSWORD}|" .env
+  set_env_value APP_PASSWORD "${GENERATED_PASSWORD}"
 fi
 
 APP_SECRET_VALUE="$(grep '^APP_SECRET=' .env | tail -n 1 | cut -d= -f2- || true)"
 if [[ -z "${APP_SECRET_VALUE}" || "${APP_SECRET_VALUE}" == "please-change-this-to-a-long-random-secret" ]]; then
   GENERATED_SECRET="$(openssl rand -hex 32)"
-  sed -i "s|^APP_SECRET=.*|APP_SECRET=${GENERATED_SECRET}|" .env
+  set_env_value APP_SECRET "${GENERATED_SECRET}"
 fi
 
 chmod 600 .env

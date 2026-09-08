@@ -197,6 +197,16 @@ fi
 
 cd "${PROJECT_DIR}"
 
+set_env_value() {
+  local key="$1"
+  local value="$2"
+  if grep -q "^${key}=" .env; then
+    sed -i "s|^${key}=.*|${key}=${value}|" .env
+  else
+    printf '%s=%s\n' "${key}" "${value}" >> .env
+  fi
+}
+
 echo "[3/6] 创建 Python 虚拟环境并安装依赖..."
 if ! id "${SERVICE_USER}" >/dev/null 2>&1; then
   useradd --system --home-dir "${PROJECT_DIR}" --shell /usr/sbin/nologin "${SERVICE_USER}"
@@ -213,13 +223,13 @@ fi
 APP_PASSWORD_VALUE="$(grep '^APP_PASSWORD=' .env | tail -n 1 | cut -d= -f2- || true)"
 if [[ -z "${APP_PASSWORD_VALUE}" || "${APP_PASSWORD_VALUE}" == "please-change-this-password" ]]; then
   GENERATED_PASSWORD="$(openssl rand -hex 16)"
-  sed -i "s|^APP_PASSWORD=.*|APP_PASSWORD=${GENERATED_PASSWORD}|" .env
+  set_env_value APP_PASSWORD "${GENERATED_PASSWORD}"
 fi
 
 APP_SECRET_VALUE="$(grep '^APP_SECRET=' .env | tail -n 1 | cut -d= -f2- || true)"
 if [[ -z "${APP_SECRET_VALUE}" || "${APP_SECRET_VALUE}" == "please-change-this-to-a-long-random-secret" ]]; then
   GENERATED_SECRET="$(openssl rand -hex 32)"
-  sed -i "s|^APP_SECRET=.*|APP_SECRET=${GENERATED_SECRET}|" .env
+  set_env_value APP_SECRET "${GENERATED_SECRET}"
 fi
 
 mkdir -p data
