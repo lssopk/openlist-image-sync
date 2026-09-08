@@ -23,7 +23,7 @@
 
 ## 一键安装（推荐）
 
-适用于全新 Debian/Ubuntu 服务器。脚本会安装 Docker、创建项目目录、生成随机面板密码和加密密钥，并启动服务：
+适用于 Debian/Ubuntu 服务器。脚本会自动判断 Docker/Compose 是否已经安装：已安装时直接复用，不重复安装，也不要求手工编辑配置；未安装时才自动补齐依赖、安装 Docker 并启动服务：
 
 ~~~bash
 curl -fsSL https://raw.githubusercontent.com/lssopk/openlist-image-sync/main/install.sh | sudo bash
@@ -36,7 +36,15 @@ curl -fsSL https://raw.githubusercontent.com/lssopk/openlist-image-sync/main/ins
 - 首次生成的管理密码；
 - 项目目录和日志命令。
 
-默认安装目录为 `/opt/openlist-image-sync`，默认端口为 `8080`。首次生成的管理密码只会在安装输出中显示，请立即保存。
+默认安装目录为 `/opt/openlist-image-sync`，默认端口为 `8080`。脚本会自动生成面板密码和加密密钥，首次生成的面板密码只会在安装输出中显示，请立即保存。
+
+如果服务器已经安装 Docker 和 Compose，也可以使用专用的一键命令。它会跳过 Docker 安装和 apt，不会触碰现有软件源：
+
+~~~bash
+curl -fsSL https://raw.githubusercontent.com/lssopk/openlist-image-sync/main/install-docker-existing.sh | sudo bash
+~~~
+
+这个模式要求服务器已有 `docker compose` 或 `docker-compose`，然后自动完成拉取项目、生成 `.env`、构建和启动；整个过程不需要修改配置文件。
 
 如果希望先审查脚本，再执行：
 
@@ -56,14 +64,14 @@ sudo docker compose up -d
 
 一键安装要求：
 
-- Debian 11/12 或较新的 Ubuntu；
+- Debian 11/12+ 或较新的 Ubuntu；
 - 能访问软件源、GitHub 和 Docker 安装源；
-- 使用 root 或拥有 sudo 权限的用户；
+- 使用 root 或通过 `sudo bash` 运行；
 - 服务器没有被占用的安装目录。
 
-## 安装方式二：Docker Compose 手动部署
+## 安装方式二：Docker Compose 手动部署（需要自定义配置时）
 
-适合已经安装 Docker Engine 和 Compose 插件的服务器：
+普通用户不需要手动部署，直接使用上面的“一键安装”即可。下面的方式适合希望先修改端口、限制来源地址或自行管理 `.env` 的用户：
 
 ~~~bash
 git clone https://github.com/lssopk/openlist-image-sync.git
@@ -118,6 +126,8 @@ curl -fsSL https://raw.githubusercontent.com/lssopk/openlist-image-sync/main/ins
 
 脚本会安装 Python 虚拟环境、创建系统用户 `openlist-sync`、安装依赖、写入 systemd 服务并自动启动。
 
+脚本不会直接改写 `/etc/apt/sources.list`。Debian 11 使用官方归档源，Debian 12+ 或 Ubuntu 在检测到旧的 `buster`、`backports`、过期 Release 等软件源时，会临时使用干净的官方源继续安装，因此不会被无关的旧源卡住。实际仍是 Debian 10/buster 的服务器已经停止维护，请先升级到 Debian 11 或更高版本。
+
 常用管理命令：
 
 ~~~bash
@@ -134,16 +144,14 @@ sudo systemctl restart openlist-image-sync
 
 ## 安装方式四：已有项目目录时使用部署脚本
 
-如果你已经把项目文件放到了服务器，可以运行：
+如果你已经把项目文件放到了服务器，可以直接运行：
 
 ~~~bash
 cd /opt/openlist-image-sync
-cp .env.example .env
-nano .env
 bash deploy.sh
 ~~~
 
-`deploy.sh` 只负责检查 Docker Compose、构建镜像并启动服务；不会覆盖已有的 `.env`。
+`deploy.sh` 会自动创建 `.env`、生成随机面板密码和加密密钥、构建镜像并启动服务；已有的自定义 `.env` 不会被覆盖。
 
 ## 第一次配置
 
@@ -328,9 +336,11 @@ python3 -m venv .venv
 ├── Dockerfile                  # Docker 镜像
 ├── docker-compose.yml           # Docker Compose 部署
 ├── install.sh                  # Debian/Ubuntu Docker 一键安装
+├── install-docker-existing.sh  # 已有 Docker 的纯一键安装
 ├── install-native.sh            # Python + systemd 一键安装
 ├── deploy.sh                   # 已有目录的 Docker 部署脚本
 ├── .env.example                # 配置模板
+├── pytest.ini                  # pytest 导入路径配置
 ├── tests/                      # 自动化测试
 └── data/                       # SQLite 数据目录（运行时生成）
 ~~~
