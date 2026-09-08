@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>OpenList 图片同步</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0b1020;
+      --panel: rgba(18, 27, 49, .86);
+      --panel-2: #151f38;
+      --line: #2a385a;
+      --text: #edf3ff;
+      --muted: #94a5c6;
+      --primary: #7c9cff;
+      --primary-2: #5d7ef2;
+      --success: #54d39a;
+      --warning: #f5c76b;
+      --danger: #ff7d91;
+      --shadow: 0 24px 70px rgba(0, 0, 0, .28);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--text);
+      font: 14px/1.5 Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at 12% 0%, rgba(94, 126, 242, .24), transparent 32rem),
+        radial-gradient(circle at 100% 10%, rgba(67, 199, 190, .16), transparent 28rem),
+        var(--bg);
+    }
+    button, input, textarea, select { font: inherit; }
+    button { cursor: pointer; }
+    .hidden { display: none !important; }
+    .login-shell { min-height: 100vh; display: grid; place-items: center; padding: 24px; }
+    .login-card { width: min(420px, 100%); padding: 34px; border: 1px solid var(--line); border-radius: 24px; background: var(--panel); box-shadow: var(--shadow); backdrop-filter: blur(18px); }
+    .brand-mark { width: 48px; height: 48px; display: grid; place-items: center; border-radius: 16px; background: linear-gradient(135deg, var(--primary), #47d5c0); color: #0a1224; font-weight: 900; font-size: 22px; }
+    h1, h2, h3, p { margin-top: 0; }
+    h1 { margin: 18px 0 6px; font-size: 26px; letter-spacing: -.02em; }
+    h2 { margin-bottom: 4px; font-size: 18px; }
+    h3 { margin-bottom: 4px; font-size: 15px; }
+    .subtitle, .hint, .muted { color: var(--muted); }
+    .subtitle { margin-bottom: 26px; }
+    .field { display: grid; gap: 7px; margin-bottom: 16px; }
+    label { color: #d7e1f7; font-weight: 600; }
+    input, textarea, select {
+      width: 100%; color: var(--text); background: #0e172c; border: 1px solid var(--line); border-radius: 11px; padding: 10px 12px; outline: none;
+    }
+    input:focus, textarea:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(124, 156, 255, .15); }
+    textarea { min-height: 90px; resize: vertical; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 12px; }
+    .btn { border: 1px solid transparent; border-radius: 10px; padding: 9px 14px; color: var(--text); background: #223150; transition: .18s ease; }
+    .btn:hover { filter: brightness(1.12); transform: translateY(-1px); }
+    .btn.primary { background: linear-gradient(135deg, var(--primary-2), #718cf2); color: #fff; }
+    .btn.ghost { background: transparent; border-color: var(--line); }
+    .btn.danger { color: #ffd8df; background: rgba(255, 125, 145, .12); border-color: rgba(255, 125, 145, .3); }
+    .btn.small { padding: 6px 9px; font-size: 12px; }
+    .btn.full { width: 100%; }
+    .form-actions { display: flex; gap: 10px; justify-content: flex-end; align-items: center; }
+    .login-card .form-actions { margin-top: 24px; }
+    .error { color: var(--danger); min-height: 22px; margin: 10px 0 0; }
+    .app-shell { width: min(1440px, 100%); margin: 0 auto; padding: 28px 22px 50px; }
+    .topbar { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin-bottom: 24px; }
+    .topbar-title { display: flex; align-items: center; gap: 13px; }
+    .mini-mark { width: 40px; height: 40px; display: grid; place-items: center; border-radius: 13px; background: linear-gradient(135deg, var(--primary), #47d5c0); color: #091225; font-weight: 900; }
+    .topbar h1 { margin: 0; font-size: 22px; }
+    .topbar .subtitle { margin: 0; font-size: 12px; }
+    .top-actions { display: flex; gap: 9px; align-items: center; }
+    .card { padding: 20px; margin-bottom: 18px; border: 1px solid var(--line); border-radius: 18px; background: var(--panel); box-shadow: 0 16px 44px rgba(0,0,0,.13); backdrop-filter: blur(16px); }
+    .section-head { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; margin-bottom: 17px; }
+    .section-head p { margin: 3px 0 0; color: var(--muted); }
+    .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 13px; margin-bottom: 18px; }
+    .stat { padding: 16px; border-radius: 16px; background: rgba(20, 31, 57, .75); border: 1px solid rgba(73, 94, 142, .42); }
+    .stat .label { color: var(--muted); font-size: 12px; }
+    .stat .value { margin-top: 4px; font-size: 25px; font-weight: 750; letter-spacing: -.03em; }
+    .stat .accent { color: var(--primary); }
+    .grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+    .settings-grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 14px; }
+    .status-line { display: flex; align-items: center; gap: 8px; min-height: 26px; color: var(--muted); }
+    .dot { width: 8px; height: 8px; display: inline-block; border-radius: 99px; background: var(--muted); }
+    .dot.ok { background: var(--success); box-shadow: 0 0 13px var(--success); }
+    .dot.warn { background: var(--warning); }
+    .dot.bad { background: var(--danger); }
+    .table-wrap { overflow-x: auto; border: 1px solid rgba(73, 94, 142, .38); border-radius: 13px; }
+    table { width: 100%; border-collapse: collapse; min-width: 790px; }
+    th, td { padding: 12px 13px; text-align: left; border-bottom: 1px solid rgba(73, 94, 142, .26); vertical-align: middle; }
+    th { color: var(--muted); font-size: 12px; font-weight: 650; background: rgba(14, 23, 44, .58); }
+    tr:last-child td { border-bottom: 0; }
+    .source-name { font-weight: 700; }
+    .source-url { display: block; max-width: 360px; overflow: hidden; color: var(--muted); text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }
+    .badge { display: inline-flex; gap: 5px; align-items: center; padding: 4px 8px; border-radius: 99px; font-size: 12px; background: rgba(148, 165, 198, .14); color: var(--muted); }
+    .badge.ok { color: var(--success); background: rgba(84, 211, 154, .11); }
+    .badge.warn { color: var(--warning); background: rgba(245, 199, 107, .11); }
+    .badge.bad { color: var(--danger); background: rgba(255, 125, 145, .11); }
+    .actions { display: flex; gap: 6px; white-space: nowrap; }
+    .empty { padding: 34px; text-align: center; color: var(--muted); }
+    .log-box { max-height: 340px; overflow: auto; border-radius: 12px; background: #0a1121; border: 1px solid rgba(73, 94, 142, .35); }
+    .log-row { display: grid; grid-template-columns: 155px 80px 1fr; gap: 10px; padding: 9px 12px; border-bottom: 1px solid rgba(73, 94, 142, .2); font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 12px; }
+    .log-row:last-child { border-bottom: 0; }
+    .log-time, .log-source { color: var(--muted); }
+    .log-level.error { color: var(--danger); }
+    .log-level.warning { color: var(--warning); }
+    .modal-backdrop { position: fixed; inset: 0; z-index: 10; display: grid; place-items: center; padding: 18px; background: rgba(3, 7, 17, .72); backdrop-filter: blur(7px); }
+    .modal { width: min(720px, 100%); max-height: calc(100vh - 36px); overflow: auto; padding: 22px; border: 1px solid var(--line); border-radius: 20px; background: #111b32; box-shadow: var(--shadow); }
+    .modal-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+    .modal-head h2 { margin: 0; }
+    .close { border: 0; background: transparent; color: var(--muted); font-size: 23px; }
+    .check-row { display: flex; gap: 9px; align-items: center; margin: 4px 0 15px; color: #d7e1f7; }
+    .check-row input { width: auto; }
+    .tip { padding: 11px 13px; border-radius: 11px; color: #b9c8e5; background: rgba(124, 156, 255, .08); border: 1px solid rgba(124, 156, 255, .19); font-size: 12px; }
+    @media (max-width: 900px) { .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } .settings-grid, .grid-2 { grid-template-columns: 1fr; } }
+    @media (max-width: 600px) { .app-shell { padding: 18px 12px 35px; } .topbar { align-items: flex-start; } .topbar .subtitle { display: none; } .top-actions .btn { padding: 8px; font-size: 12px; } .card { padding: 15px; } .stats { gap: 8px; } .stat { padding: 12px; } .stat .value { font-size: 21px; } .log-row { grid-template-columns: 1fr; gap: 2px; } }
+  </style>
+</head>
+<body>
+  <section id="loginView" class="login-shell">
+    <div class="login-card">
+      <div class="brand-mark">⇄</div>
+      <h1>OpenList 图片同步</h1>
+      <p class="subtitle">登录后管理图片 API、定时抓取与 OpenList 写入任务。</p>
+      <form id="loginForm">
+        <div class="field"><label for="loginUser">管理账号</label><input id="loginUser" autocomplete="username" required></div>
+        <div class="field"><label for="loginPassword">管理密码</label><input id="loginPassword" type="password" autocomplete="current-password" required></div>
+        <p id="loginError" class="error"></p>
+        <button class="btn primary full" type="submit">登录管理面板</button>
+      </form>
+    </div>
+  </section>
+
+  <main id="appView" class="app-shell hidden">
+    <header class="topbar">
+      <div class="topbar-title"><div class="mini-mark">⇄</div><div><h1>OpenList 图片同步</h1><p class="subtitle">多来源 API · 定时抓取 · 自动去重 · 写入 OpenList</p></div></div>
+      <div class="top-actions"><button id="refreshBtn" class="btn ghost">刷新</button><button id="logoutBtn" class="btn ghost">退出</button></div>
+    </header>
+
+    <section class="stats">
+      <div class="stat"><div class="label">图片来源</div><div id="statSources" class="value accent">—</div></div>
+      <div class="stat"><div class="label">已启用</div><div id="statEnabled" class="value">—</div></div>
+      <div class="stat"><div class="label">已上传图片</div><div id="statUploaded" class="value">—</div></div>
+      <div class="stat"><div class="label">累计写入</div><div id="statBytes" class="value">—</div></div>
+    </section>
+
+    <section class="card">
+      <div class="section-head"><div><h2>OpenList 连接</h2><p>账号密码只保存在本项目的 SQLite 中，密码使用 APP_SECRET 加密。</p></div><div id="openlistStatus" class="status-line"><span class="dot"></span>尚未测试</div></div>
+      <form id="openlistForm" class="settings-grid">
+        <div>
+          <div class="field"><label for="openlistUrl">OpenList 地址</label><input id="openlistUrl" placeholder="https://example.com" required></div>
+          <div class="grid-2"><div class="field"><label for="openlistUser">用户名</label><input id="openlistUser" required></div><div class="field"><label for="openlistPassword">密码</label><input id="openlistPassword" type="password" placeholder="留空则保持原密码"></div></div>
+        </div>
+        <div>
+          <div class="field"><label for="targetPath">默认写入目录</label><input id="targetPath" value="/Images" required></div>
+          <div class="tip">程序会通过 OpenList 登录接口、目录读取接口和文件上传接口验证读写链路。每个来源还可以指定自己的子目录。</div>
+        </div>
+        <div class="form-actions" style="grid-column: 1 / -1"><span id="openlistMessage" class="hint"></span><button class="btn ghost" type="button" id="testOpenListBtn">测试连接并读取目录</button><button class="btn primary" type="submit">保存连接设置</button></div>
+      </form>
+      <div id="openlistItems" class="hint" style="margin-top:12px"></div>
+    </section>
+
+    <section class="card">
+      <div class="section-head"><div><h2>图片 API 来源</h2><p>可添加多个来源；每个来源独立设置提取方式、请求头、间隔和保存目录。</p></div><button id="addSourceBtn" class="btn primary">添加来源</button></div>
+      <div class="table-wrap"><table><thead><tr><th>来源</th><th>状态</th><th>间隔</th><th>上次运行</th><th>下次运行</th><th>操作</th></tr></thead><tbody id="sourceTable"></tbody></table></div>
+    </section>
+
+    <section class="card">
+      <div class="section-head"><div><h2>最近运行日志</h2><p>查看 API 提取、去重、上传及错误详情。</p></div><button id="refreshLogsBtn" class="btn ghost small">刷新日志</button></div>
+      <div id="logBox" class="log-box"></div>
+    </section>
+
+    <section class="card">
+      <div class="section-head"><div><h2>最近写入记录</h2><p>每张图片以 SHA-256 去重，重复内容不会再次上传。</p></div><button id="refreshDownloadsBtn" class="btn ghost small">刷新记录</button></div>
+      <div class="table-wrap"><table><thead><tr><th>时间</th><th>来源</th><th>状态</th><th>OpenList 路径</th><th>大小</th></tr></thead><tbody id="downloadTable"></tbody></table></div>
+    </section>
+  </main>
+
+  <div id="sourceModal" class="modal-backdrop hidden">
+    <div class="modal">
+      <div class="modal-head"><h2 id="modalTitle">添加图片来源</h2><button id="closeModalBtn" class="close" type="button">×</button></div>
+      <form id="sourceForm">
+        <div class="grid-2"><div class="field"><label for="sourceName">名称</label><input id="sourceName" placeholder="例如：每日随机图" required></div><div class="field"><label for="sourceUrl">API 地址</label><input id="sourceUrl" placeholder="https://example.com/api" required></div></div>
+        <div class="grid-2"><div class="field"><label for="sourceMode">提取方式</label><select id="sourceMode"><option value="auto">自动识别 JSON / HTML / 图片</option><option value="direct">直接把响应当图片</option><option value="json">JSON 图片地址</option><option value="html">HTML 图片标签</option><option value="text">文本中的图片地址</option></select></div><div class="field"><label for="sourceInterval">抓取间隔（分钟）</label><input id="sourceInterval" type="number" min="1" max="10080" value="60" required></div></div>
+        <div class="grid-2"><div class="field"><label for="sourceJsonPath">JSON 路径（可选）</label><input id="sourceJsonPath" placeholder="例如：$.data[*].url"></div><div class="field"><label for="sourceSelector">CSS 选择器（HTML 可选）</label><input id="sourceSelector" placeholder="例如：img 或 .photo img"></div></div>
+        <div class="grid-2"><div class="field"><label for="sourceTarget">OpenList 子目录（可选）</label><input id="sourceTarget" placeholder="例如：随机图/2026"></div><div class="field"><label for="sourceMaxItems">每次最多处理数量</label><input id="sourceMaxItems" type="number" min="1" max="100" value="20" required></div></div>
+        <div class="field"><label for="sourceHeaders">请求头 JSON（可选）</label><textarea id="sourceHeaders" spellcheck="false">{}</textarea><span class="hint">例如：{"Authorization":"Bearer your-token","User-Agent":"OpenListImageSync/1.0"}</span></div>
+        <div class="field"><label for="sourceFilename">文件名模板</label><input id="sourceFilename" value="{date}_{index}_{hash8}.{ext}"><span class="hint">可用变量：{date}、{time}、{index}、{hash8}、{hash}、{ext}、{source}、{original}</span></div>
+        <label class="check-row"><input id="sourceEnabled" type="checkbox" checked> 启用定时抓取</label>
+        <div class="form-actions"><button class="btn ghost" type="button" id="cancelSourceBtn">取消</button><button class="btn primary" type="submit">保存来源</button></div>
+        <p id="sourceError" class="error"></p>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const state = { sources: [], editingId: null };
+    const $ = (id) => document.getElementById(id);
+    const esc = (value) => String(value ?? '').replace(/[&<>'"]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+    const fmtDate = (value) => value ? new Date(value).toLocaleString() : '—';
+    const fmtBytes = (value) => { let n = Number(value || 0); if (!n) return '0 B'; const units = ['B','KB','MB','GB','TB']; let i = 0; while (n >= 1024 && i < units.length - 1) { n /= 1024; i++; } return `${n.toFixed(i ? 1 : 0)} ${units[i]}`; };
+    const statusBadge = (status) => { const map = {success:['正常','ok'],partial:['部分成功','warn'],empty:['无图片','warn'],error:['错误','bad'],uploaded:['已上传','ok'],failed:['失败','bad'],skipped:['已跳过','warn']}; const item = map[status] || [status || '等待','']; return `<span class="badge ${item[1]}">${esc(item[0])}</span>`; };
+
+    async function api(path, options = {}) {
+      const response = await fetch(path, { credentials: 'same-origin', ...options, headers: {'Content-Type': 'application/json', ...(options.headers || {})} });
+      let body = null; try { body = await response.json(); } catch (_) {}
+      if (response.status === 401) { showLogin(); throw new Error('登录已失效'); }
+      if (!response.ok) throw new Error(body?.detail || body?.message || `请求失败（${response.status}）`);
+      return body;
+    }
+
+    function showLogin() { $('loginView').classList.remove('hidden'); $('appView').classList.add('hidden'); }
+    function showApp() { $('loginView').classList.add('hidden'); $('appView').classList.remove('hidden'); }
+    function setMessage(id, text, bad = false) { const node = $(id); node.textContent = text || ''; node.style.color = bad ? 'var(--danger)' : 'var(--muted)'; }
+
+    async function loadAll() {
+      const [overview, openlist, sources, logs, downloads] = await Promise.all([api('/api/overview'), api('/api/openlist'), api('/api/sources'), api('/api/logs?limit=200'), api('/api/downloads?limit=100')]);
+      renderOverview(overview); renderOpenList(openlist); state.sources = sources; renderSources(); renderLogs(logs); renderDownloads(downloads);
+    }
+    function renderOverview(data) { $('statSources').textContent = data.source_count; $('statEnabled').textContent = data.enabled_count; $('statUploaded').textContent = data.uploaded_count; $('statBytes').textContent = fmtBytes(data.uploaded_bytes); setOpenListStatus(data.openlist?.has_password ? 'ok' : 'warn', data.openlist?.has_password ? '已保存连接' : '请配置 OpenList'); }
+    function renderOpenList(data) { $('openlistUrl').value = data.base_url || ''; $('openlistUser').value = data.username || ''; $('targetPath').value = data.target_path || '/Images'; $('openlistPassword').value = ''; }
+    function setOpenListStatus(kind, text) { const node = $('openlistStatus'); node.innerHTML = `<span class="dot ${kind}"></span>${esc(text)}`; }
+    function renderSources() {
+      const tbody = $('sourceTable');
+      if (!state.sources.length) { tbody.innerHTML = `<tr><td colspan="6" class="empty">还没有来源，点击右上角添加第一个图片 API。</td></tr>`; return; }
+      tbody.innerHTML = state.sources.map((s) => `<tr>
+        <td><div class="source-name">${esc(s.name)}</div><span class="source-url" title="${esc(s.url)}">${esc(s.url)}</span></td>
+        <td>${s.enabled ? '<span class="badge ok">● 已启用</span>' : '<span class="badge">已暂停</span>'}<div class="hint" style="margin-top:4px">${statusBadge(s.last_status)}</div></td>
+        <td>${esc(s.interval_minutes)} 分钟<br><span class="hint">最多 ${esc(s.max_items)} 张</span></td>
+        <td>${fmtDate(s.last_run_at)}${s.last_error ? `<div class="hint" style="color:var(--danger);max-width:220px" title="${esc(s.last_error)}">${esc(s.last_error).slice(0, 70)}</div>` : ''}</td>
+        <td>${fmtDate(s.next_run_at)}</td>
+        <td><div class="actions"><button class="btn small primary" onclick="runSource(${s.id})">立即运行</button><button class="btn small ghost" onclick="editSource(${s.id})">编辑</button><button class="btn small danger" onclick="deleteSource(${s.id})">删除</button></div></td>
+      </tr>`).join('');
+    }
+    function renderLogs(logs) {
+      const box = $('logBox');
+      if (!logs.length) { box.innerHTML = '<div class="empty">暂无日志</div>'; return; }
+      box.innerHTML = logs.map((log) => `<div class="log-row"><span class="log-time">${esc(fmtDate(log.created_at))}</span><span class="log-level ${esc(log.level)}">${esc(log.level)}</span><span><span class="log-source">${esc(log.source_id ? `来源 #${log.source_id}` : '系统')}</span>　${esc(log.message)}</span></div>`).join('');
+    }
+    function renderDownloads(items) {
+      const tbody = $('downloadTable');
+      if (!items.length) { tbody.innerHTML = '<tr><td colspan="5" class="empty">暂无写入记录</td></tr>'; return; }
+      tbody.innerHTML = items.map((item) => `<tr><td>${esc(fmtDate(item.created_at))}</td><td>${esc(item.source_name || `来源 #${item.source_id}`)}</td><td>${statusBadge(item.status)}</td><td title="${esc(item.file_path || item.remote_url)}"><span class="source-url">${esc(item.file_path || item.remote_url)}</span></td><td>${fmtBytes(item.bytes_size)}</td></tr>`).join('');
+    }
+
+    function openSourceModal(source = null) {
+      state.editingId = source?.id || null; $('modalTitle').textContent = source ? '编辑图片来源' : '添加图片来源'; $('sourceError').textContent = '';
+      $('sourceName').value = source?.name || ''; $('sourceUrl').value = source?.url || ''; $('sourceMode').value = source?.extraction_mode || 'auto'; $('sourceInterval').value = source?.interval_minutes || 60; $('sourceJsonPath').value = source?.json_path || ''; $('sourceSelector').value = source?.css_selector || ''; $('sourceTarget').value = source?.target_subdir || ''; $('sourceMaxItems').value = source?.max_items || 20; $('sourceHeaders').value = source?.headers_json || '{}'; $('sourceFilename').value = source?.filename_template || '{date}_{index}_{hash8}.{ext}'; $('sourceEnabled').checked = source ? Boolean(source.enabled) : true; $('sourceModal').classList.remove('hidden'); }
+    function closeSourceModal() { $('sourceModal').classList.add('hidden'); state.editingId = null; }
+    function sourcePayload() { return {name:$('sourceName').value.trim(), url:$('sourceUrl').value.trim(), enabled:$('sourceEnabled').checked, interval_minutes:Number($('sourceInterval').value), extraction_mode:$('sourceMode').value, json_path:$('sourceJsonPath').value.trim(), css_selector:$('sourceSelector').value.trim(), headers_json:$('sourceHeaders').value.trim() || '{}', filename_template:$('sourceFilename').value.trim(), target_subdir:$('sourceTarget').value.trim(), max_items:Number($('sourceMaxItems').value)}; }
+    async function saveSource(event) { event.preventDefault(); $('sourceError').textContent = ''; try { const payload = sourcePayload(); const path = state.editingId ? `/api/sources/${state.editingId}` : '/api/sources'; await api(path, {method:state.editingId ? 'PUT' : 'POST', body:JSON.stringify(payload)}); closeSourceModal(); await loadAll(); } catch (error) { $('sourceError').textContent = error.message; } }
+    async function runSource(id) { const source = state.sources.find((s) => s.id === id); if (!source) return; if (!confirm(`立即抓取“${source.name}”？`)) return; try { setMessage('openlistMessage', '正在抓取和上传，请稍候…'); const result = await api(`/api/sources/${id}/run`, {method:'POST'}); setMessage('openlistMessage', `完成：发现 ${result.found}，上传 ${result.uploaded}，跳过 ${result.skipped}，失败 ${result.failed}`); await loadAll(); } catch (error) { setMessage('openlistMessage', error.message, true); await loadAll().catch(() => {}); } }
+    function editSource(id) { const source = state.sources.find((s) => s.id === id); if (source) openSourceModal(source); }
+    async function deleteSource(id) { const source = state.sources.find((s) => s.id === id); if (!source || !confirm(`删除来源“${source.name}”？历史记录也会被删除，但 OpenList 中已经上传的图片不会删除。`)) return; try { await api(`/api/sources/${id}`, {method:'DELETE'}); await loadAll(); } catch (error) { alert(error.message); } }
+    window.runSource = runSource; window.editSource = editSource; window.deleteSource = deleteSource;
+
+    $('loginForm').addEventListener('submit', async (event) => { event.preventDefault(); setMessage('loginError', ''); try { await api('/api/login', {method:'POST', body:JSON.stringify({username:$('loginUser').value, password:$('loginPassword').value})}); $('loginPassword').value = ''; showApp(); await loadAll(); } catch (error) { setMessage('loginError', error.message, true); } });
+    $('logoutBtn').addEventListener('click', async () => { await api('/api/logout', {method:'POST'}).catch(() => {}); showLogin(); });
+    $('refreshBtn').addEventListener('click', () => loadAll().catch((error) => setMessage('openlistMessage', error.message, true)));
+    $('refreshLogsBtn').addEventListener('click', () => api('/api/logs?limit=200').then(renderLogs).catch((error) => setMessage('openlistMessage', error.message, true)));
+    $('refreshDownloadsBtn').addEventListener('click', () => api('/api/downloads?limit=100').then(renderDownloads).catch((error) => setMessage('openlistMessage', error.message, true)));
+    $('addSourceBtn').addEventListener('click', () => openSourceModal()); $('closeModalBtn').addEventListener('click', closeSourceModal); $('cancelSourceBtn').addEventListener('click', closeSourceModal); $('sourceModal').addEventListener('click', (event) => { if (event.target === $('sourceModal')) closeSourceModal(); }); $('sourceForm').addEventListener('submit', saveSource);
+    $('openlistForm').addEventListener('submit', async (event) => { event.preventDefault(); try { const result = await api('/api/openlist', {method:'PUT', body:JSON.stringify({base_url:$('openlistUrl').value.trim(), username:$('openlistUser').value.trim(), password:$('openlistPassword').value, target_path:$('targetPath').value.trim()})}); renderOpenList(result); setMessage('openlistMessage', '连接设置已保存'); setOpenListStatus('warn', '已保存，待测试'); } catch (error) { setMessage('openlistMessage', error.message, true); } });
+    $('testOpenListBtn').addEventListener('click', async () => { setMessage('openlistMessage', '正在连接并读取目录…'); try { const result = await api('/api/openlist/test', {method:'POST'}); setOpenListStatus('ok', '连接成功，具备读取权限'); const items = result.items || []; setMessage('openlistMessage', `读取成功：${items.length} 个目录项`); $('openlistItems').innerHTML = items.length ? `目录内容预览：${items.map((item) => esc(item.name || item.name_str || item.path || '未命名')).join('、')}` : '目录为空或暂无可显示的项目。'; } catch (error) { setOpenListStatus('bad', '连接失败'); setMessage('openlistMessage', error.message, true); } });
+
+    (async function init() { try { const session = await api('/api/session'); if (session.authenticated) { showApp(); await loadAll(); } else showLogin(); } catch (_) { showLogin(); } })();
+  </script>
+</body>
+</html>
