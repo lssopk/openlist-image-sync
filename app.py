@@ -748,6 +748,14 @@ app = FastAPI(title="OpenList Image Sync", version="1.0.0")
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 
+@app.exception_handler(AppError)
+async def app_error_handler(request: Request, exc: AppError) -> JSONResponse:
+    """Return expected integration/configuration failures as JSON, not HTTP 500."""
+    del request
+    error_status = status.HTTP_502_BAD_GATEWAY if isinstance(exc, RemoteRequestError) else status.HTTP_400_BAD_REQUEST
+    return JSONResponse(status_code=error_status, content={"detail": str(exc)})
+
+
 def session_token() -> str:
     expires = int((utc_now() + timedelta(days=7)).timestamp())
     payload = f"{APP_USERNAME}:{expires}".encode("utf-8")
