@@ -312,7 +312,7 @@ sudo systemctl daemon-reload
 python3 -m venv .venv
 .venv/bin/python -m pip install -r requirements.txt
 .venv/bin/python -m pip install pytest
-.venv/bin/pytest -q
+.venv/bin/python -m pytest -q
 .venv/bin/python -m py_compile app.py tests/test_extractors.py
 ~~~
 
@@ -338,4 +338,3 @@ python3 -m venv .venv
 ## License
 
 MIT License。详见 [LICENSE](LICENSE)。
-
